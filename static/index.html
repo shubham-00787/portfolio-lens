@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Portfolio Lens</title>
+  <meta name="description" content="Portfolio Lens: see which stocks and sectors you really own through your mutual funds." />
+  <meta name="theme-color" content="#4f46e5" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%234f46e5'/%3E%3Cstop offset='1' stop-color='%232a78d6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='9' fill='url(%23g)'/%3E%3Ccircle cx='14' cy='14' r='6.5' fill='none' stroke='white' stroke-width='2.6'/%3E%3Cpath d='M19 19l5.5 5.5' stroke='white' stroke-width='2.6' stroke-linecap='round'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/styles.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.5.0/echarts.min.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#top" aria-label="Portfolio Lens home">
+      <span class="logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg>
+      </span>
+      <div>
+        <h1>Portfolio Lens</h1>
+        <div class="tag-line">Look through your mutual funds</div>
+      </div>
+    </a>
+    <nav class="nav needs-results hidden" aria-label="Sections">
+      <a href="#overview">Overview</a>
+      <a href="#top-holdings">Top holdings</a>
+      <a href="#compare">vs Index</a>
+      <a href="#overlap">Overlap</a>
+      <a href="#all-holdings">All holdings</a>
+    </nav>
+    <div class="top-actions">
+      <button class="primary needs-results hidden pdfBtn" title="Download the full analysis as a PDF">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>
+        <span class="label-text">Download PDF</span>
+      </button>
+      <button id="themeToggle" class="ghost icon" title="Toggle light / dark theme" aria-label="Toggle light or dark theme">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main id="top">
+    <!-- ── Intro ──────────────────────────────────────────── -->
+    <section class="hero" id="hero">
+      <div>
+        <span class="kicker">For Indian mutual funds &amp; demat portfolios</span>
+        <h2>See what you <span>really own</span> through your mutual funds</h2>
+        <p>Type your funds the way you remember them. Portfolio Lens finds the right schemes, looks through their latest holdings and shows your true exposure to every stock and sector, compared with the Indian market.</p>
+        <span class="privacy-note">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+          Nothing you enter is saved. It stays in this tab only.
+        </span>
+      </div>
+      <div class="steps">
+        <div class="step"><span class="step-n">1</span><div><b>Add your funds</b><span>Names can be rough: "ppfas flexi", "hdfc midcap opp". Paste straight from a CAS works too.</span></div></div>
+        <div class="step"><span class="step-n">2</span><div><b>Add amounts and stocks (optional)</b><span>Current values make the numbers rupee-accurate. Add demat shares to see everything together.</span></div></div>
+        <div class="step"><span class="step-n">3</span><div><b>Explore, rebalance, download</b><span>Drag sliders to test changes, compare with any index and save the analysis as a PDF.</span></div></div>
+      </div>
+    </section>
+
+    <!-- ── Inputs: funds ──────────────────────────────────── -->
+    <section class="card" id="inputCard">
+      <div class="card-head">
+        <div class="card-title"><span class="step-n">1</span><h2>Your mutual funds</h2></div>
+        <div class="head-actions">
+          <button class="ghost" id="pasteBtn">Paste list</button>
+          <button class="ghost" id="sampleBtn">Load sample</button>
+          <button class="ghost" id="clearBtn">Clear</button>
+        </div>
+      </div>
+      <p class="hint">Amounts are optional. Leave them blank to weight funds equally. For rupee-accurate exposure use each fund's current value.</p>
+
+      <div id="pasteBox" class="paste hidden">
+        <textarea id="pasteArea" rows="6" placeholder="One fund per line, amount optional:&#10;ppfas flexi cap, 250000&#10;quant small cap - 1,00,000&#10;icici bluechip 75000"></textarea>
+        <div class="row-actions"><button class="primary" id="pasteApply">Add these</button><button class="ghost" id="pasteCancel">Cancel</button></div>
+      </div>
+
+      <div class="fund-table">
+        <div class="fund-row header">
+          <span>You typed</span><span>Matched fund</span><span>Amount (₹)</span><span>Allocation</span><span></span>
+        </div>
+        <div id="fundRows"></div>
+      </div>
+      <div class="row-actions">
+        <button class="ghost" id="addRowBtn">+ Add fund</button>
+        <span class="spacer"></span>
+        <label class="switch"><input type="checkbox" id="equalWeight" /> Weight funds equally</label>
+        <button id="analyzeBtn" class="primary">Match &amp; analyse</button>
+      </div>
+      <div id="status" class="status" role="status"></div>
+    </section>
+
+    <!-- ── Inputs: direct stocks ──────────────────────────── -->
+    <section class="card" id="stockCard">
+      <div class="card-head">
+        <div class="card-title"><span class="step-n">2</span><h2>Stocks you hold directly <span class="muted small" style="font-weight:400">optional</span></h2></div>
+        <div class="head-actions">
+          <button class="ghost" id="stockPasteBtn">Paste list</button>
+          <button class="ghost" id="stockClearBtn">Clear</button>
+        </div>
+      </div>
+      <p class="hint">Shares in your demat account count too. Paste rows from your statement (ISIN + name + value works best) or type names like "tata power". Use current market value.</p>
+      <div id="stockPasteBox" class="paste hidden">
+        <textarea id="stockPasteArea" rows="5" placeholder="One stock per line, value at the end:&#10;INE002A01018 RELIANCE INDUSTRIES LIMITED, 2,50,000&#10;infosys - 1,20,000&#10;itc 75k"></textarea>
+        <div class="row-actions"><button class="primary" id="stockPasteApply">Add these</button><button class="ghost" id="stockPasteCancel">Cancel</button></div>
+      </div>
+      <div class="fund-table">
+        <div class="fund-row stk header"><span>You typed</span><span>Matched stock</span><span>Sector</span><span>Value (₹)</span><span></span></div>
+        <div id="stockRows"></div>
+      </div>
+      <div class="row-actions">
+        <button class="ghost" id="addStockBtn">+ Add stock</button>
+        <span class="spacer"></span>
+        <span class="muted small" id="stockTotal"></span>
+        <button id="analyzeBtn2" class="primary">Match &amp; analyse</button>
+      </div>
+    </section>
+
+    <!-- ── Results ────────────────────────────────────────── -->
+    <section id="results" class="hidden">
+      <div class="section-title" id="overview">
+        <div><div class="eyebrow">Overview</div><h2>Your look-through portfolio</h2>
+          <p>Every fund opened up and added together, so each stock is counted once.</p></div>
+      </div>
+      <div class="kpis" id="kpis"></div>
+
+      <div class="filters card slim">
+        <label>Show
+          <select id="assetFilter">
+            <option value="all">All assets</option>
+            <option value="Equity" selected>Equity only</option>
+          </select>
+        </label>
+        <label>Sector <select id="sectorFilter"><option value="">All sectors</option></select></label>
+        <label>Top stocks <select id="topN"><option>15</option><option selected>25</option><option>40</option></select></label>
+        <span class="spacer"></span>
+        <span id="baselineTag" class="tag hidden">Showing Δ vs baseline</span>
+        <button id="baselineBtn" title="Freeze current exposure so you can see what changes as you rebalance">Set as baseline</button>
+      </div>
+
+      <div class="grid two" id="pdf-sectors">
+        <div class="card">
+          <div class="card-head"><h2>Sector exposure</h2><span class="sub">Click a bar to filter</span></div>
+          <div id="sectorChart" class="chart"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h2>Stock map</h2><span class="sub">Area = your exposure, grouped by sector</span></div>
+          <div id="treemap" class="chart"></div>
+        </div>
+      </div>
+
+      <div class="section-title" id="top-holdings">
+        <div><div class="eyebrow">Top holdings</div><h2>Your biggest stock exposures</h2>
+          <p>Each bar is split by the fund it comes from, so you can see where concentration builds up.</p></div>
+        <span class="muted small" id="topNote"></span>
+      </div>
+      <div class="card" id="pdf-top">
+        <div id="stockChart" class="chart tall"></div>
+      </div>
+
+      <div class="section-title" id="compare">
+        <div><div class="eyebrow">Benchmark</div><h2>Compare with an Indian index</h2>
+          <p>How your company-size mix, sectors and stocks differ from the market you choose.</p></div>
+        <label class="inline">Index <select id="benchSelect"></select></label>
+      </div>
+      <div class="card" id="benchCard">
+        <div id="pdf-bench-top">
+        <p class="hint" id="benchNote"></p>
+        <div class="kpis" id="benchKpis"></div>
+        <div class="grid two" style="margin-top:18px">
+          <div>
+            <h3 class="sub-h">Company size mix <span class="muted small">(SEBI buckets: Nifty 100 · Midcap 150 · Smallcap 250. "Outside top 500" = micro-caps and foreign stocks)</span></h3>
+            <div id="sizeChart" class="chart short"></div>
+          </div>
+          <div>
+            <h3 class="sub-h">Sector weights: you vs index</h3>
+            <div id="benchSectorChart" class="chart"></div>
+          </div>
+        </div>
+        </div>
+        <div class="grid two" style="margin-top:10px" id="pdf-bench-tables">
+          <div>
+            <h3 class="sub-h">Where you're heavier than the index</h3>
+            <div class="table-wrap short"><table id="overTable"></table></div>
+          </div>
+          <div>
+            <h3 class="sub-h">Where you're lighter than the index</h3>
+            <div class="table-wrap short"><table id="underTable"></table></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title" id="overlap">
+        <div><div class="eyebrow">Diversification</div><h2>Fund overlap and asset mix</h2>
+          <p>High overlap means two funds hold largely the same stocks at similar weights.</p></div>
+      </div>
+      <div class="grid two" id="pdf-overlap">
+        <div class="card">
+          <div class="card-head"><h2>Fund overlap</h2><span class="sub">Common weight between two funds</span></div>
+          <div id="overlapChart" class="chart"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h2>Asset mix</h2><span class="sub">Across all funds and direct stocks</span></div>
+          <div id="assetChart" class="chart"></div>
+        </div>
+      </div>
+
+      <div class="section-title" id="all-holdings">
+        <div><div class="eyebrow">Details</div><h2>All holdings</h2>
+          <p>Click any stock to see which funds it comes from.</p></div>
+        <input id="tableSearch" type="search" placeholder="Search stock or sector…" aria-label="Search holdings" />
+      </div>
+      <div class="card" style="padding:0">
+        <div class="table-wrap" style="border:0">
+          <table id="holdTable">
+            <thead><tr>
+              <th data-k="name">Stock</th><th data-k="sector">Sector</th>
+              <th data-k="value" class="num">Your exposure</th><th data-k="pct" class="num">% of portfolio</th>
+              <th data-k="delta" class="num delta-col hidden">Δ vs baseline</th>
+              <th data-k="nfunds" class="num">Held by</th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card download-card" id="download">
+        <div>
+          <h2>Download the full analysis</h2>
+          <p>A PDF with your summary, fund list, every chart, the index comparison and your top 50 holdings. It's built entirely in your browser, so nothing is uploaded.</p>
+        </div>
+        <button class="primary lg pdfBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>
+          Download PDF
+        </button>
+      </div>
+      <p class="footnote" id="footnote"></p>
+    </section>
+  </main>
+
+  <div id="pdfStage" aria-hidden="true"></div>
+  <script src="/static/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+pytest>=8
+# demo recording (scripts/record_demo.py)
+playwright>=1.45
+imageio-ffmpeg>=0.5
